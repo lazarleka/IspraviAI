@@ -1,29 +1,56 @@
-# [App name]: design
-
-> The team fills this file in together with Claude. Prompt (any language is fine):
-> "Interview me about our app's design, one question at a time, then fill in DESIGN.md
-> and update the tokens in src/index.css."
+# Ispravi AI: design
 
 ## Product
-[What the app does, in one sentence.]
+A learning app where the AI hides exactly one error in every card and the user has to find it; solo study
+and live PvP matches between friends.
 
 ## Users
-[Who uses it, their age, which device they use most.]
+High school and university students, 15–25, mostly on a phone (375–430 px), sometimes on a laptop.
+UI copy in Montenegrin (Latin, ijekavian).
 
 ## Tone
-[Three adjectives, e.g. playful, fast, reliable.]
+Focused, confident, a little playful. It feels like hunting for errors with a highlighter, not like a kids' game.
 
 ## Visuals
-- Colors: [primary, accent, background]. Tokens live in `src/index.css`.
-- Fonts: [headings], [body]. Two fonts at most.
-- Shape: [rounded or sharp, shadows or borders].
-- Images: [what kind, how large].
-- Icons: `lucide-react` only.
+- **Background:** deep navy everywhere (`--background`). Cards are **white** with dark text and stand out
+  from the navy like a sheet of paper.
+- **Yellow is the action and the marker:** primary buttons, today's count, the selected segment (it looks
+  like a highlighter stroke over the text, `--marker`). Yellow is never decoration; if everything is
+  yellow, nothing is.
+- **Surfaces on navy:** lighter navy (`--secondary` / `--muted`) for deck rows, explanation boxes, the
+  opponent's score.
+- **Result colors:** green (`--success`) for correct, red (`--destructive`) for wrong; the wrong segment is
+  struck through in red and the correction is shown next to it on a light green background.
+- **Subject colors** (deck icon, progress, subject badge): biology green `--subject-biology`, history coral
+  `--subject-history`, programming violet `--subject-programming`, everything else blue `--subject-other`.
+- **Code cards:** monospace font, line numbers, a dark code surface (`--code`) inside the white card frame.
+- **Fonts:** Poppins (headings, numbers, scores), Mulish (body). Both support č ć š ž đ.
+- **Shape:** rounded (12 px cards, 10 px buttons, pills for badges), borders instead of shadows.
+- **Images:** none in the MVP; icons only.
+- **Icons:** `lucide-react` only (Leaf, Landmark, Code, Upload, Lightbulb, CircleCheck, CircleX, Swords, Users, Timer).
+
+## Key screens (see SPEC.md §4)
+- **Home:** greeting, a yellow block "Danas za ponavljanje: N kartica", deck rows with subject icon and %,
+  a dashed yellow "Ubaci skriptu" button.
+- **Card:** subject pill + "4 / 12", a thin yellow progress bar, "Nađi grešku", the white card with tappable
+  segments, the source reference, buttons "Nema greške" (outline) and "Provjeri" (yellow).
+- **Result:** green banner "Tačno, uhvatio si ga" (or red), the corrected sentence, an explanation box with
+  a yellow lightbulb, "Sljedeća kartica".
+- **Match:** both names and scores on top (you left, opponent right), a 20 s timer bar (yellow, turns red
+  under 5 s), the same white card, "Ne znam" at the bottom; "Marko je bio brži" / "Marko ne zna" as small
+  status lines.
+
+## Motion
+- Selecting a segment: the marker "draws" in from left to right (150 ms)
+- Correct: the card flashes green once; wrong: a short horizontal shake (respects `prefers-reduced-motion`)
+- No other animation
 
 ## References
-- `docs/ref/[image].png`: [what you like about it, and what you don't]
+- `docs/ref/`: put screenshots here when the team picks references
 
 ## Don't
-- Gradients without a reason, emoji instead of icons, a "Welcome to…" hero
-- Everything in cards with shadows
-- [your own rules]
+- Gradients, glow, neon, drop shadows
+- Emoji instead of icons, a "Welcome to…" hero
+- Yellow text on white (unreadable); yellow is a fill on navy or the marker behind dark text
+- Hex values in components: add a token to `src/index.css` first
+- Light mode: the MVP has one theme (navy)

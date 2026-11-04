@@ -8,4 +8,10 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(import.meta.dirname, './src') },
   },
+  server: {
+    // The FastAPI backend (beckend/) runs on :8000; ws: true also proxies the /api/ws WebSocket.
+    proxy: {
+      '/api': { target: 'http://localhost:8000', changeOrigin: true, ws: true },
+    },
+  },
 })

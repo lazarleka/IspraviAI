@@ -1,8 +1,21 @@
 # Frontend
 
 React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui + React Router + TanStack Query.
-Design is described in @DESIGN.md, entities in @../docs/entities.md.
+Design is described in @DESIGN.md, entities in @../docs/entities.md, the product in @../SPEC.md.
 All paths below are relative to `frontend/`.
+
+## Ispravi AI specifics
+- Features: `auth`, `decks`, `study`, `friends`, `matches` (one folder each in `src/features/`); delete the
+  `listings` example once the first real feature exists
+- The REST API is the FastAPI backend in `../beckend/` (Vite proxies `/api` to :8000); `*-api.ts` files call
+  `fetch('/api/...')` and read paginated lists from `items`. Mock data is only for screens whose backend route
+  does not exist yet
+- The token is kept in memory plus `localStorage` (`src/lib/auth-token.ts`) and sent as `Authorization: Bearer`
+- Realtime: one WebSocket per user in `src/lib/realtime.ts` (connect to `/api/ws`, send `auth` first, reconnect
+  with backoff, typed messages from `docs/entities.md`); `friends` and `matches` subscribe through their own hooks
+- The match screen renders server events only: the timer counts down to `endsAt` from the server, points and
+  "who was first" come from `card_end`; never compute the result on the client
+- UI copy is Montenegrin (Latin, ijekavian); code and comments stay English
 
 ## Feature-first
 Every feature (listings, users, messages…) lives in `src/features/<name>/` and has only the
