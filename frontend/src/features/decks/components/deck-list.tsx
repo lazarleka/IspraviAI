@@ -1,10 +1,8 @@
-import { Upload } from 'lucide-react'
-import { Link } from 'react-router'
-
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 import { useDecks } from '../api/use-decks'
+import { AddDeckDialog } from './add-deck-dialog'
 import { DeckRow } from './deck-row'
 
 export function DeckList() {
@@ -33,14 +31,12 @@ export function DeckList() {
 
   if (decks.data.items.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-primary p-6 text-center">
-        <p className="font-semibold">Napravi svoj prvi špil</p>
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-secondary p-6 text-center">
+        <p className="font-semibold">Napravi svoje prve kartice</p>
         <p className="text-sm text-muted-foreground">
-          Ubaci skriptu ili napiši temu, a AI napravi kartice sa greškama.
+          Unesi temu ili ubaci skriptu, a AI napravi kartice sa greškama.
         </p>
-        <Button asChild>
-          <Link to="/decks/new">Ubaci skriptu</Link>
-        </Button>
+        <AddDeckDialog variant="button" />
       </div>
     )
   }
@@ -54,13 +50,7 @@ export function DeckList() {
           </li>
         ))}
       </ul>
-      <Link
-        to="/decks/new"
-        className="flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary text-sm font-semibold text-accent transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <Upload className="size-4" aria-hidden="true" />
-        Ubaci skriptu
-      </Link>
+      <AddDeckDialog />
     </div>
   )
 }

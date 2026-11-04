@@ -20,7 +20,7 @@ export function ChallengeToast() {
     <div
       role="alertdialog"
       aria-label="Novi izazov"
-      className="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-md flex-col gap-3 rounded-xl border border-primary bg-secondary p-4"
+      className="fixed inset-x-4 top-4 z-50 mx-auto flex max-w-md flex-col gap-3 rounded-xl border border-foreground/40 bg-secondary p-4"
     >
       <p className="flex items-center gap-2 text-sm">
         <Swords className="size-5 text-primary" aria-hidden="true" />

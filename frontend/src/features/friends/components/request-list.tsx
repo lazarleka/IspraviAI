@@ -21,7 +21,7 @@ export function RequestList() {
         {incoming.map((request) => (
           <li
             key={request.id}
-            className="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-3"
+            className="flex items-center gap-3 rounded-xl border border-foreground/40 bg-secondary p-3"
           >
             <UserAvatar name={request.friend.displayName} />
             <span className="flex min-w-0 flex-1 flex-col">

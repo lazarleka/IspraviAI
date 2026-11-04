@@ -22,8 +22,9 @@
   --secondary-foreground: #e6f1fb;
   --muted: #0c447c;
   --muted-foreground: #85b7eb;
-  --accent: #fac775;
-  --accent-foreground: #412402;
+  /* Hover and soft highlights: blue, so yellow stays reserved for actions and the marker */
+  --accent: #185fa5;
+  --accent-foreground: #ffffff;
   --destructive: #e24b4a;
   --destructive-foreground: #ffffff;
   --border: #185fa5;
@@ -40,7 +41,7 @@
   --code: #2c2c2a;
   --code-foreground: #d3d1c7;
   --subject-biology: #97c459;
-  --subject-history: #f0997b;
+  --subject-history: #ed93b1;
   --subject-programming: #afa9ec;
   --subject-other: #85b7eb;
   --font-mono: ui-monospace, 'JetBrains Mono', Consolas, monospace;

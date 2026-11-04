@@ -6,22 +6,22 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { SUBJECTS, SUBJECT_LABELS, type Subject } from '@/lib/subjects'
 
 import { useCreateDeck, useUploadDeck } from '../api/use-decks'
 import { CARD_COUNT_OPTIONS, type Deck } from '../types'
 
-type Source = 'topic' | 'file'
+export type DeckSource = 'topic' | 'file'
 
 type NewDeckFormProps = {
+  /** Which tab is open first: chosen in the "Dodaj karticu" dialog. */
+  initialSource?: DeckSource
   onCreated: (deck: Deck) => void
 }
 
-export function NewDeckForm({ onCreated }: NewDeckFormProps) {
-  const [source, setSource] = useState<Source>('topic')
+export function NewDeckForm({ initialSource = 'topic', onCreated }: NewDeckFormProps) {
+  const [source, setSource] = useState<DeckSource>(initialSource)
   const [topic, setTopic] = useState('')
   const [file, setFile] = useState<File | null>(null)
-  const [subject, setSubject] = useState<Subject | undefined>(undefined)
   const [requestedCards, setRequestedCards] = useState<number>(10)
   const [validationError, setValidationError] = useState<string | null>(null)
 
@@ -40,7 +40,8 @@ export function NewDeckForm({ onCreated }: NewDeckFormProps) {
         setValidationError('Tema mora imati između 3 i 200 znakova.')
         return
       }
-      createDeck.mutate({ topic: trimmed, subject, requestedCards }, { onSuccess: onCreated })
+      // The subject is not asked for: the AI guesses it from the material (docs/entities.md, "Deck").
+      createDeck.mutate({ topic: trimmed, requestedCards }, { onSuccess: onCreated })
       return
     }
 
@@ -48,7 +49,7 @@ export function NewDeckForm({ onCreated }: NewDeckFormProps) {
       setValidationError('Izaberi fajl sa skriptom.')
       return
     }
-    uploadDeck.mutate({ file, subject, requestedCards }, { onSuccess: onCreated })
+    uploadDeck.mutate({ file, requestedCards }, { onSuccess: onCreated })
   }
 
   const error = validationError ?? apiError?.message ?? null
@@ -80,7 +81,7 @@ export function NewDeckForm({ onCreated }: NewDeckFormProps) {
         <TabsContent value="file" className="mt-4">
           <label
             htmlFor="file"
-            className="flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary p-4 text-center transition-colors hover:bg-secondary focus-within:ring-2 focus-within:ring-ring"
+            className="flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-secondary p-4 text-center text-secondary-foreground transition-colors hover:border-foreground focus-within:ring-2 focus-within:ring-ring"
           >
             {file ? (
               <>
@@ -111,14 +112,6 @@ export function NewDeckForm({ onCreated }: NewDeckFormProps) {
         options={CARD_COUNT_OPTIONS}
         value={CARD_COUNT_OPTIONS.find((n) => n === requestedCards)}
         onChange={setRequestedCards}
-      />
-
-      <ChoiceChips
-        label="Predmet (neobavezno, AI pogađa sam)"
-        options={SUBJECTS}
-        value={subject}
-        onChange={(value) => setSubject(value === subject ? undefined : value)}
-        format={(value) => SUBJECT_LABELS[value]}
       />
 
       {error ? (

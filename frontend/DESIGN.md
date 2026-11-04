@@ -14,15 +14,15 @@ Focused, confident, a little playful. It feels like hunting for errors with a hi
 ## Visuals
 - **Background:** deep navy everywhere (`--background`). Cards are **white** with dark text and stand out
   from the navy like a sheet of paper.
-- **Yellow is the action and the marker:** primary buttons, today's count, the selected segment (it looks
-  like a highlighter stroke over the text, `--marker`). Yellow is never decoration; if everything is
-  yellow, nothing is.
+- **Yellow is the action and the marker:** primary buttons, the selected chip, the selected segment (it
+  looks like a highlighter stroke over the text, `--marker`). Yellow is never a card, a block or a border:
+  surfaces stay navy with white text for contrast. Hover states are blue (`--accent`).
 - **Surfaces on navy:** lighter navy (`--secondary` / `--muted`) for deck rows, explanation boxes, the
   opponent's score.
 - **Result colors:** green (`--success`) for correct, red (`--destructive`) for wrong; the wrong segment is
   struck through in red and the correction is shown next to it on a light green background.
-- **Subject colors** (deck icon, progress, subject badge): biology green `--subject-biology`, history coral
-  `--subject-history`, programming violet `--subject-programming`, everything else blue `--subject-other`.
+- **Subject colors** (deck icon, progress, subject badge): biology green `--subject-biology`, history pink
+  `--subject-history` (no orange anywhere), programming violet `--subject-programming`, everything else blue `--subject-other`.
 - **Code cards:** monospace font, line numbers, a dark code surface (`--code`) inside the white card frame.
 - **Fonts:** Poppins (headings, numbers, scores), Mulish (body). Both support č ć š ž đ.
 - **Shape:** rounded (12 px cards, 10 px buttons, pills for badges), borders instead of shadows.
@@ -30,8 +30,9 @@ Focused, confident, a little playful. It feels like hunting for errors with a hi
 - **Icons:** `lucide-react` only (Leaf, Landmark, Code, Upload, Lightbulb, CircleCheck, CircleX, Swords, Users, Timer).
 
 ## Key screens (see SPEC.md §4)
-- **Home:** greeting, a yellow block "Danas za ponavljanje: N kartica", deck rows with subject icon and %,
-  a dashed yellow "Ubaci skriptu" button.
+- **Home:** greeting, a navy block "Danas za ponavljanje: N kartica" with a yellow "Kreni" button, deck
+  rows with subject icon and %, a dashed white "Dodaj karticu" button. It opens a dialog with two choices,
+  "Unesi temu" and "Ubaci skriptu", which open the new-deck form on the matching tab.
 - **Card:** subject pill + "4 / 12", a thin yellow progress bar, "Nađi grešku", the white card with tappable
   segments, the source reference, buttons "Nema greške" (outline) and "Provjeri" (yellow).
 - **Result:** green banner "Tačno, uhvatio si ga" (or red), the corrected sentence, an explanation box with

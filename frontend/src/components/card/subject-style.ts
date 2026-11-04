@@ -14,7 +14,7 @@ type SubjectStyle = {
 }
 
 const GREEN = { text: 'text-subject-biology', fill: 'bg-subject-biology', stripe: 'border-t-subject-biology' }
-const CORAL = { text: 'text-subject-history', fill: 'bg-subject-history', stripe: 'border-t-subject-history' }
+const PINK = { text: 'text-subject-history', fill: 'bg-subject-history', stripe: 'border-t-subject-history' }
 const VIOLET = {
   text: 'text-subject-programming',
   fill: 'bg-subject-programming',
@@ -24,7 +24,7 @@ const BLUE = { text: 'text-subject-other', fill: 'bg-subject-other', stripe: 'bo
 
 export const SUBJECT_STYLES: Record<Subject, SubjectStyle> = {
   biology: { icon: Leaf, ...GREEN },
-  history: { icon: Landmark, ...CORAL },
+  history: { icon: Landmark, ...PINK },
   programming: { icon: Code, ...VIOLET },
   math: { icon: Sigma, ...BLUE },
   physics: { icon: Atom, ...BLUE },

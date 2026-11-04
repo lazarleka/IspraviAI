@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 import { useStudyToday } from '../api/use-study'
 
-// The yellow block on the home screen: how many cards are due today, and a shortcut to the first deck.
+// The block on top of the home screen: how many cards are due today, and a shortcut to the first deck.
 export function StudyTodayCard() {
   const today = useStudyToday()
 
@@ -17,14 +17,14 @@ export function StudyTodayCard() {
   const label = count === 1 ? 'kartica' : count >= 2 && count <= 4 ? 'kartice' : 'kartica'
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl bg-primary p-4 text-primary-foreground">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary p-4 text-secondary-foreground">
       <div>
-        <p className="text-sm">Danas za ponavljanje</p>
-        <p className="font-heading text-3xl font-bold">
+        <p className="text-sm text-muted-foreground">Danas za ponavljanje</p>
+        <p className="font-heading text-3xl font-bold text-foreground">
           {count} {label}
         </p>
         {count === 0 ? (
-          <p className="mt-1 inline-flex items-center gap-1 text-xs">
+          <p className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground">
             <Flame className="size-3.5" aria-hidden="true" />
             Sve je ponovljeno za danas
           </p>
@@ -33,7 +33,7 @@ export function StudyTodayCard() {
       {firstDue ? (
         <Link
           to={`/study/${firstDue.deckId}`}
-          className="flex min-h-11 items-center rounded-lg bg-primary-foreground px-4 text-sm font-semibold text-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           Kreni
         </Link>

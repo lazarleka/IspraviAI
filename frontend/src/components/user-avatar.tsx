@@ -11,7 +11,7 @@ type UserAvatarProps = {
 export function UserAvatar({ name, online, className }: UserAvatarProps) {
   return (
     <span className={cn('relative inline-flex size-10 shrink-0', className)}>
-      <span className="flex size-full items-center justify-center rounded-full bg-background font-heading text-sm font-bold text-accent">
+      <span className="flex size-full items-center justify-center rounded-full bg-background font-heading text-sm font-bold text-foreground">
         {initials(name)}
       </span>
       {online !== undefined ? (
