@@ -104,3 +104,41 @@
     @apply font-heading;
   }
 }
+
+/* Motion from DESIGN.md: the marker "draws" in, a wrong answer shakes the card once.
+   Use with motion-safe:animate-marker / motion-safe:animate-shake. */
+@theme {
+  --animate-marker: marker-draw 180ms ease-out;
+  --animate-shake: shake 320ms ease-in-out;
+
+  @keyframes marker-draw {
+    from {
+      background-size: 0% 100%;
+    }
+    to {
+      background-size: 100% 100%;
+    }
+  }
+
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-6px);
+    }
+    75% {
+      transform: translateX(6px);
+    }
+  }
+}
+
+/* The yellow highlighter behind a selected segment. */
+@utility marker {
+  background-image: linear-gradient(var(--marker), var(--marker));
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 100% 100%;
+  color: var(--marker-foreground);
+}

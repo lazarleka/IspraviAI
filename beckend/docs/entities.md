@@ -224,7 +224,7 @@ the live match. Messages are JSON `{"type": "...", ...}` with camelCase keys.
 | --- | --- | --- |
 | `auth` | `token` | first message |
 | `match_join` | `matchId` | on opening `/match/:id` (also to rejoin after a disconnect) |
-| `match_tap` | `matchId`, `cardId`, `selectedIndex` | tapped a segment |
+| `match_tap` | `matchId`, `cardId`, `selectedIndex` (number or `null`) | tapped a segment; `null` = "Nema greške" (the card has no error) |
 | `match_dont_know` | `matchId`, `cardId` | clicked "Ne znam" |
 | `ping` | | every 20 s |
 

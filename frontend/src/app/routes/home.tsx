@@ -1,18 +1,27 @@
-import { Link } from 'react-router'
-
-import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useMe } from '@/features/auth/api/use-auth'
+import { DeckList } from '@/features/decks/components/deck-list'
+import { StudyTodayCard } from '@/features/study/components/study-today-card'
 
 export function Home() {
+  const me = useMe()
+
   return (
-    <section className="py-16">
-      <h1 className="text-4xl font-bold tracking-tight md:text-5xl">Workshop 3 starter</h1>
-      <p className="mt-4 max-w-xl text-muted-foreground">
-        An empty React project ready for Claude Code. First step: let Claude interview you about the design
-        and write DESIGN.md.
-      </p>
-      <Button asChild className="mt-8">
-        <Link to="/listings">See the example list</Link>
-      </Button>
+    <section className="flex flex-col gap-6">
+      {me.isPending ? (
+        <Skeleton className="h-7 w-40 bg-secondary" />
+      ) : me.isError ? (
+        <h1 className="text-2xl font-bold">Zdravo</h1>
+      ) : (
+        <h1 className="text-2xl font-bold">Zdravo, {me.data.displayName.split(' ')[0]}</h1>
+      )}
+
+      <StudyTodayCard />
+
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold text-muted-foreground">Tvoji špilovi</h2>
+        <DeckList />
+      </div>
     </section>
   )
 }
