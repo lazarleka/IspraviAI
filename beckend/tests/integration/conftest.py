@@ -16,7 +16,13 @@ from sqlalchemy import delete
 from app.config.settings import DBSettings, Settings
 from app.database.base import Base
 from app.database.session_factory import ISessionFactory, SessionFactory
-from app.listings.models.listing import Listing
+from app.decks.models.card import Card
+from app.decks.models.deck import Deck
+from app.friends.models.friendship import Friendship
+from app.matches.models.challenge import Challenge
+from app.matches.models.match import Match
+from app.matches.models.match_answer import MatchAnswer
+from app.study.models.card_progress import CardProgress
 from app.users.models.user import User
 from app.utils.di import add_to_di_container, get_from_di_container
 
@@ -63,15 +69,27 @@ def clean_tables() -> Generator[None]:
     yield
     session_factory = get_from_di_container(ISessionFactory)
     with session_factory() as session:
-        session.execute(delete(Listing))
+        session.execute(delete(MatchAnswer))
+        session.execute(delete(Match))
+        session.execute(delete(Challenge))
+        session.execute(delete(CardProgress))
+        session.execute(delete(Card))
+        session.execute(delete(Deck))
+        session.execute(delete(Friendship))
         session.execute(delete(User))
         session.commit()
 
 
-def register(client: TestClient, email: str) -> dict[str, str]:
+def register(client: TestClient, email: str, username: str | None = None) -> dict[str, str]:
+    resolved_username = username or email.split("@")[0]
     response = client.post(
         "/api/auth/register",
-        json={"email": email, "password": "secret123", "displayName": email.split("@")[0]},
+        json={
+            "email": email,
+            "password": "secret123",
+            "displayName": resolved_username,
+            "username": resolved_username,
+        },
     )
     assert response.status_code == 201, response.text
     return {"Authorization": f"Bearer {response.json()['token']}"}
@@ -85,14 +103,3 @@ def auth_headers(client: TestClient) -> dict[str, str]:
 @pytest.fixture
 def other_auth_headers(client: TestClient) -> dict[str, str]:
     return register(client, "marko@example.com")
-
-
-@pytest.fixture
-def listing_id(client: TestClient, auth_headers: dict[str, str]) -> int:
-    response = client.post(
-        "/api/listings",
-        json={"title": "PlayStation 5", "price": 380, "category": "consoles", "city": "Podgorica"},
-        headers=auth_headers,
-    )
-    assert response.status_code == 201, response.text
-    return int(response.json()["id"])

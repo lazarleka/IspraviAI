@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,3 +27,9 @@ class Settings(DBSettings):
 
     # NOTE: ALLOWED_ORIGINS='["http://localhost:5173","https://app.example.com"]'
     ALLOWED_ORIGINS: list[str] = ["http://localhost:5173"]
+
+    LLM_PROVIDER: Literal["fake", "gemini"] = "fake"
+    GEMINI_API_KEY: str | None = None
+    GEMINI_MODEL: str = "gemini-2.5-flash"
+    MAX_UPLOAD_MB: int = 10
+    MAX_SOURCE_CHARS: int = 50_000
