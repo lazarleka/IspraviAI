@@ -7,14 +7,23 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth.exceptions.auth import EmailAlreadyRegisteredException, InvalidCredentialsException
+from app.auth.exceptions.auth import (
+    EmailAlreadyRegisteredException,
+    InvalidCredentialsException,
+    UsernameTakenException,
+)
 from app.auth.schemas.auth import AuthenticationResponseSchema
 from app.users.schemas.user import UserResponseSchema
 from tests.utils import create_current_user
 
 pytestmark = pytest.mark.unit
 
-REGISTER_BODY = {"email": "ana@example.com", "password": "secret123", "displayName": "Ana"}
+REGISTER_BODY = {
+    "email": "ana@example.com",
+    "password": "secret123",
+    "displayName": "Ana",
+    "username": "ana",
+}
 
 
 def _auth_response() -> AuthenticationResponseSchema:
@@ -35,6 +44,7 @@ def test_register_returns_201_with_token_and_user(client: TestClient, auth_servi
         "user": {
             "id": 1,
             "email": "ana@example.com",
+            "username": "test_user",
             "displayName": "Test User",
             "createdAt": "2026-01-01T00:00:00Z",
         },
@@ -62,6 +72,21 @@ def test_register_short_password_is_422(client: TestClient, auth_service: Mock) 
     assert response.status_code == 422
     assert "password" in response.json()["fieldErrors"]
     auth_service.register.assert_not_called()
+
+
+def test_register_duplicate_username_is_409_with_field_error(
+    client: TestClient, auth_service: Mock
+) -> None:
+    auth_service.register.side_effect = UsernameTakenException()
+
+    response = client.post("/api/auth/register", json=REGISTER_BODY)
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Username is already taken",
+        "code": "username_taken",
+        "fieldErrors": {"username": "Username is already taken"},
+    }
 
 
 def test_login_wrong_password_is_401(client: TestClient, auth_service: Mock) -> None:

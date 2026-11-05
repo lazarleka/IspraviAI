@@ -10,6 +10,7 @@ from app.auth.exceptions.auth import (
     EmailAlreadyRegisteredException,
     InvalidCredentialsException,
     InvalidTokenException,
+    UsernameTakenException,
 )
 from app.auth.password import hash_password, verify_password
 from app.auth.repositories.auth import IAuthRepository
@@ -43,13 +44,15 @@ class AuthService(IAuthService):
     def register(self, data: RegisterRequestSchema) -> AuthenticationResponseSchema:
         user = User(
             email=data.email.lower(),
+            username=data.username.lower(),
             password_hash=hash_password(data.password),
             display_name=data.display_name,
         )
         try:
             user = self._auth_repository.add_user(user)
         except IntegrityError as e:
-            # The UNIQUE constraint on users.email decides, not an `if` before the insert (ADR-007).
+            if self._integrity_constraint_name(e) == "uq_users_username":
+                raise UsernameTakenException from e
             raise EmailAlreadyRegisteredException from e
         return self._authentication_response(user)
 
@@ -65,8 +68,26 @@ class AuthService(IAuthService):
         if user is None:
             raise InvalidTokenException
         return CurrentUser(
-            id=user.id, email=user.email, display_name=user.display_name, created_at=user.created_at
+            id=user.id,
+            email=user.email,
+            username=user.username,
+            display_name=user.display_name,
+            created_at=user.created_at,
         )
+
+    @staticmethod
+    def _integrity_constraint_name(error: IntegrityError) -> str | None:
+        diag = getattr(error.orig, "diag", None)
+        constraint_name = getattr(diag, "constraint_name", None)
+        if isinstance(constraint_name, str):
+            return constraint_name
+
+        message = str(error.orig)
+        if "users.username" in message:
+            return "uq_users_username"
+        if "users.email" in message:
+            return "uq_users_email"
+        return None
 
     def _authentication_response(self, user: User) -> AuthenticationResponseSchema:
         return AuthenticationResponseSchema(

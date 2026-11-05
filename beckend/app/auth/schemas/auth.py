@@ -13,6 +13,7 @@ class RegisterRequestSchema(CamelCaseModel):
     # bcrypt reads at most 72 bytes of a password, so longer ones are rejected instead of silently cut.
     password: str = Field(min_length=8, max_length=72)
     display_name: str = Field(min_length=1, max_length=60)
+    username: str = Field(min_length=3, max_length=20, pattern=r"^[a-z0-9_]+$")
 
 
 class LoginRequestSchema(CamelCaseModel):
@@ -30,6 +31,7 @@ class CurrentUser(BaseModel):
 
     id: int
     email: str
+    username: str
     display_name: str
     created_at: datetime
 

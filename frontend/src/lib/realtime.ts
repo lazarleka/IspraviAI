@@ -1,6 +1,5 @@
 // One realtime connection per signed-in user (docs/entities.md, "Realtime").
-// VITE_REALTIME=ws  -> a real WebSocket on /api/ws (first message: auth with the token).
-// otherwise (mock)  -> an in-browser mock server, registered by a feature with registerMockServer().
+// Real WebSocket is the default. Set VITE_REALTIME=mock only for an isolated frontend demo.
 // The transport is generic: features narrow messages to their own types.
 import { useEffect, useRef, useSyncExternalStore } from 'react'
 
@@ -15,7 +14,7 @@ export type MockServer = {
   handle: (message: RealtimeMessage, emit: Emit) => void
 }
 
-export const REALTIME_MODE: 'ws' | 'mock' = import.meta.env.VITE_REALTIME === 'ws' ? 'ws' : 'mock'
+export const REALTIME_MODE: 'ws' | 'mock' = import.meta.env.VITE_REALTIME === 'mock' ? 'mock' : 'ws'
 
 const PING_MS = 20_000
 const MAX_BACKOFF_MS = 10_000

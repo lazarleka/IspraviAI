@@ -7,12 +7,18 @@ from fastapi.testclient import TestClient
 def test_register_then_me(client: TestClient) -> None:
     response = client.post(
         "/api/auth/register",
-        json={"email": "Ana@Example.com", "password": "secret123", "displayName": "Ana"},
+        json={
+            "email": "Ana@Example.com",
+            "password": "secret123",
+            "displayName": "Ana",
+            "username": "ana",
+        },
     )
 
     assert response.status_code == 201
     body = response.json()
     assert body["user"]["email"] == "ana@example.com"  # stored lowercase
+    assert body["user"]["username"] == "ana"
     assert "password" not in body["user"]
     assert "passwordHash" not in body["user"]
 
@@ -25,11 +31,51 @@ def test_register_then_me(client: TestClient) -> None:
 def test_register_twice_is_409(client: TestClient) -> None:
     response = client.post(
         "/api/auth/register",
-        json={"email": "ana@example.com", "password": "secret123", "displayName": "Ana 2"},
+        json={
+            "email": "ana@example.com",
+            "password": "secret123",
+            "displayName": "Ana 2",
+            "username": "ana_2",
+        },
     )
 
     assert response.status_code == 409
     assert response.json()["fieldErrors"] == {"email": "Email is already registered"}
+
+
+@pytest.mark.usefixtures("auth_headers")
+def test_register_duplicate_username_is_409(client: TestClient) -> None:
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "email": "different@example.com",
+            "password": "secret123",
+            "displayName": "Other Ana",
+            "username": "ana",
+        },
+    )
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Username is already taken",
+        "code": "username_taken",
+        "fieldErrors": {"username": "Username is already taken"},
+    }
+
+
+def test_register_rejects_invalid_username(client: TestClient) -> None:
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "email": "ana@example.com",
+            "password": "secret123",
+            "displayName": "Ana",
+            "username": "Ana!",
+        },
+    )
+
+    assert response.status_code == 422
+    assert "username" in response.json()["fieldErrors"]
 
 
 @pytest.mark.usefixtures("auth_headers")

@@ -14,7 +14,13 @@ class TestSettings(Settings):
     model_config = SettingsConfigDict(env_file=None, use_enum_values=True, extra="allow")
 
 
-def create_current_user(id: int = 1, email: str = "test@example.com") -> CurrentUser:
+def create_current_user(
+    id: int = 1, email: str = "test@example.com", username: str = "test_user"
+) -> CurrentUser:
     return CurrentUser(
-        id=id, email=email, display_name="Test User", created_at=datetime(2026, 1, 1, tzinfo=UTC)
+        id=id,
+        email=email,
+        username=username,
+        display_name="Test User",
+        created_at=datetime(2026, 1, 1, tzinfo=UTC),
     )

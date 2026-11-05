@@ -25,3 +25,9 @@ class EmailAlreadyRegisteredException(ConflictException):
         super().__init__(
             message=message, code="email_already_registered", field_errors={"email": message}
         )
+
+
+class UsernameTakenException(ConflictException):
+    def __init__(self) -> None:
+        message = "Username is already taken"
+        super().__init__(message=message, code="username_taken", field_errors={"username": message})

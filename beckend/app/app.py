@@ -14,9 +14,14 @@ from app.config.settings import Settings
 from app.database.import_sqlalchemy_models import load_all_models
 from app.database.session_factory import ISessionFactory
 from app.database.session_handler import db_session_handler
+from app.decks.generation.gemini import GeminiCardGenerator
+from app.decks.generation.generator import FakeCardGenerator, ICardGenerator
 from app.deps import get_di_entity
+from app.matches.engine.room import MatchEngine
+from app.realtime.presence import IPresence
+from app.realtime.registry import ConnectionRegistry
 from app.routes import api_router
-from app.utils.di import get_from_di_container
+from app.utils.di import add_to_di_container, get_from_di_container
 from app.utils.exceptions import (
     AppBaseException,
     ConflictException,
@@ -136,6 +141,18 @@ def setup_middleware(app: FastAPI, settings: Settings) -> None:
 
 
 def setup_app() -> FastAPI:
+    settings = get_from_di_container(Settings)
+    generator: ICardGenerator
+    if settings.LLM_PROVIDER == "gemini":
+        generator = GeminiCardGenerator(settings)
+    else:
+        generator = FakeCardGenerator()
+    add_to_di_container(ICardGenerator, generator)
+
+    connection_registry = ConnectionRegistry()
+    add_to_di_container(ConnectionRegistry, connection_registry)
+    add_to_di_container(IPresence, connection_registry)
+    add_to_di_container(MatchEngine, MatchEngine(connection_registry))
     app = FastAPI(title="AI-DEV API", version="0.1.0", redirect_slashes=False)
 
     app.include_router(api_router)
@@ -143,8 +160,6 @@ def setup_app() -> FastAPI:
     load_all_models()
 
     add_liveness_and_readiness_checks(app)
-
-    settings = get_from_di_container(Settings)
 
     add_exception_handlers(app, settings)
 

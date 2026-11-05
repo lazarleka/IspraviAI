@@ -2,8 +2,7 @@
 export type User = {
   id: number
   email: string
-  /** Not returned by the backend yet; it is added together with friends. */
-  username?: string
+  username: string
   displayName: string
   createdAt: string
 }
