@@ -5,6 +5,8 @@ export type PublicUser = {
   displayName: string
 }
 
+export type AvatarColor = 'blue' | 'amber' | 'green' | 'purple' | 'rose'
+
 export function initials(name: string): string {
   return name
     .split(/\s+/)

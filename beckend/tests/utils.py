@@ -22,5 +22,9 @@ def create_current_user(
         email=email,
         username=username,
         display_name="Test User",
+        avatar_color="amber",
+        daily_goal=10,
+        sound_enabled=True,
+        animations_enabled=True,
         created_at=datetime(2026, 1, 1, tzinfo=UTC),
     )

@@ -11,6 +11,10 @@ from app.utils.pagination import Page, PaginationParams, paginate
 
 
 class IUserRepository(Protocol):
+    def get_by_id(self, user_id: int) -> User | None: ...
+
+    def save(self, user: User) -> User: ...
+
     def search(
         self, search: str, exclude_user_id: int, pagination_params: PaginationParams
     ) -> Page[User]: ...
@@ -20,6 +24,13 @@ class IUserRepository(Protocol):
 class UserRepository(IUserRepository):
     def __init__(self, session_factory: ISessionFactory) -> None:
         self._session_factory = session_factory
+
+    def get_by_id(self, user_id: int) -> User | None:
+        return self._session_factory().get(User, user_id)
+
+    def save(self, user: User) -> User:
+        self._session_factory().flush()
+        return user
 
     def search(
         self, search: str, exclude_user_id: int, pagination_params: PaginationParams

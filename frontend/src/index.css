@@ -14,6 +14,11 @@
   --foreground: #e6f1fb;
   --card: #ffffff;
   --card-foreground: #2c2c2a;
+  --profile-card: #185fa5;
+  --profile-card-foreground: #ffffff;
+  --profile-card-muted: #d1e8fb;
+  --profile-card-border: #4c95d5;
+  --profile-card-accent: #fac775;
   --popover: #0c447c;
   --popover-foreground: #e6f1fb;
   --primary: #ef9f27;
@@ -54,6 +59,11 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-profile-card: var(--profile-card);
+  --color-profile-card-foreground: var(--profile-card-foreground);
+  --color-profile-card-muted: var(--profile-card-muted);
+  --color-profile-card-border: var(--profile-card-border);
+  --color-profile-card-accent: var(--profile-card-accent);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
@@ -142,4 +152,8 @@
   background-position: left center;
   background-size: 100% 100%;
   color: var(--marker-foreground);
+}
+
+@utility avatar-color-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }

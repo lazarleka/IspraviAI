@@ -4,5 +4,9 @@ import { MatchResultView } from '@/features/matches/components/match-result-view
 
 export function MatchResultPage() {
   const { matchId } = useParams()
-  return <MatchResultView matchId={Number(matchId)} />
+  return (
+    <div className="mx-auto w-full max-w-5xl">
+      <MatchResultView matchId={Number(matchId)} />
+    </div>
+  )
 }

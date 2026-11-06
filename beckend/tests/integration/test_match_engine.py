@@ -83,6 +83,12 @@ def test_two_players_start_and_score_live_card(
         assert sum(message["type"] == "card_start" for message in registry.messages[1]) == 2
 
         await engine.tap(1, match_id, card["id"], 1)
+        assert not any(
+            message["type"] in {"answer_result", "card_end", "opponent_action"}
+            for messages in registry.messages.values()
+            for message in messages
+        )
+        await engine.dont_know(2, match_id, card["id"])
 
     asyncio.run(play_card())
     answer = next(message for message in registry.messages[1] if message["type"] == "answer_result")
@@ -98,4 +104,4 @@ def test_two_players_start_and_score_live_card(
             session.scalars(select(MatchAnswer).where(MatchAnswer.match_id == match_id)).all()
         )
     assert len(answers) == 2
-    assert {answer.action for answer in answers} == {MatchAction.TAP, MatchAction.TIMEOUT}
+    assert {answer.action for answer in answers} == {MatchAction.TAP, MatchAction.DONT_KNOW}

@@ -18,7 +18,7 @@ export function DeckRow({ deck }: DeckRowProps) {
   return (
     <Link
       to={`/decks/${deck.id}`}
-      className="flex min-h-16 items-center gap-3 rounded-xl bg-secondary p-3 transition-colors hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="flex min-h-16 items-center gap-3 rounded-xl bg-secondary p-3 transition-colors hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:min-h-20 lg:p-4"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-background">
         <SubjectIcon subject={deck.subject} />

@@ -93,7 +93,7 @@ Kartice koriste i `study` i `matches`, pa idu u `src/components/card/`:
   - `ws`: pravi WebSocket na `/api/ws`. Prva poruka je `auth`, ponovno povezivanje ide sa pauzom, a ping
     ide svakih 20 s.
   - `mock`: lažni server u browseru sa **botom protivnikom**. Bot odgovara za 3–15 s, nekad tačno, nekad
-    pogrešno, nekad klikne „Ne znam“, i šalje `card_start`, `opponent_action`, `card_end`, `match_end`.
+    pogrešno, nekad klikne „Ne znam“, i šalje `card_start`, privatni `answer_result`, `card_end`, `match_end`.
     Tako se PvP može razvijati i snimiti bez backenda.
 - Implementacija se bira preko `VITE_REALTIME=mock|ws` (podrazumijevano `mock`).
 

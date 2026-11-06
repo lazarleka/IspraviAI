@@ -38,6 +38,10 @@ Code: `app/users/`; register/login/me in `app/auth/`.
 | email | string, valid email | yes | unique, stored lowercase; returned only by `/auth/*` |
 | username | string, 3–20 characters, `a-z`, `0-9`, `_` | yes | unique, stored lowercase; used to find friends |
 | displayName | string, 1–60 characters | yes | |
+| avatarColor | `blue` \| `amber` \| `green` \| `purple` \| `rose` | yes | defaults to `amber` |
+| dailyGoal | 5–50 | yes | cards the user aims to review each day; defaults to 10 |
+| soundEnabled | boolean | yes | defaults to `true` |
+| animationsEnabled | boolean | yes | defaults to `true` |
 | createdAt | date | yes | assigned by the backend |
 
 The password (8–72 characters) is sent only on register and login; it is never returned.
@@ -46,9 +50,11 @@ The password (8–72 characters) is sent only on register and login; it is never
 | Route | Auth | Body | Response |
 | --- | --- | --- | --- |
 | `POST /api/auth/register` | no | `{email, password, displayName, username}` | `201 {token, user}`, `409 email_already_registered`, `409 username_taken`, `422` |
-| `POST /api/auth/login` | no | `{email, password}` | `200 {token, user}`, `401 invalid_credentials` |
+| `POST /api/auth/login` | no | `{identifier, password}` where identifier is email or username | `200 {token, user}`, `401 invalid_credentials` |
 | `GET /api/auth/me` | yes | | `200` user |
 | `GET /api/users?search=&page=&size=` | yes | | `200 Page[PublicUser]`; `search` (≥ 2 characters) matches the start of the username; excludes yourself |
+| `PATCH /api/users/me` | yes | any subset of `{displayName, username, avatarColor, dailyGoal, soundEnabled, animationsEnabled}` | `200` user, `409 username_taken`, `422` |
+| `GET /api/users/me/stats` | yes | | `200 {matchesPlayed, wins, losses, draws, winRate, totalScore, bestScore, cardsReviewed, correctAnswers, wrongAnswers, accuracy}` |
 
 ## Deck
 
@@ -238,8 +244,7 @@ the live match. Messages are JSON `{"type": "...", ...}` with camelCase keys.
 | `challenge_updated` | `challenge` | accepted, declined, expired, cancelled, or `deckStatus` changed |
 | `match_ready` | `matchId`, `startsAt` | both players joined; 3-2-1 countdown until `startsAt` |
 | `card_start` | `matchId`, `index`, `total`, `card: CardQuestion`, `endsAt` | a new card (20 s) |
-| `answer_result` | `matchId`, `cardId`, `correct`, `points` | reply to your own `match_tap` |
-| `opponent_action` | `matchId`, `cardId`, `action: "wrong" \| "dont_know"` | the opponent is done with the card |
+| `answer_result` | `matchId`, `cardId`, `correct`, `points` | your private result, sent only after both players answer or time expires |
 | `card_end` | `matchId`, `cardId`, `winnerId \| null`, `reason: "correct" \| "both_done" \| "timeout"`, `card: CardAnswer`, `scores: {[userId]: number}` | the card is over; next card after 3 s |
 | `opponent_disconnected` | `matchId`, `graceSeconds` | the opponent dropped; 15 s to come back |
 | `match_end` | `matchId`, `winnerId \| null`, `status`, `scores` | the match is over |

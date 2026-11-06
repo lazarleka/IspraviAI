@@ -66,7 +66,10 @@ def load_room(match_id: int) -> tuple[MatchResponseSchema, list[CardAnswerSchema
         started_at=match.started_at,
         finished_at=match.finished_at,
     )
-    return response, [CardAnswerSchema.model_validate(card) for card in match.challenge.deck.cards]
+    return response, [
+        CardAnswerSchema.model_validate(card)
+        for card in match.challenge.deck.cards[: match.challenge.card_count]
+    ]
 
 
 @db_session_handler
@@ -227,11 +230,6 @@ class MatchEngine:
                 if correct
                 else -5
             )
-            if correct:
-                room.streaks[user_id] += 1
-                if room.streaks[user_id] % 3 == 0:
-                    points += 5
-            room.scores[user_id] += points
             answer = MatchAnswer(
                 match_id=match_id,
                 card_id=card.id,
@@ -244,31 +242,8 @@ class MatchEngine:
             )
             state.done = True
             state.answer = answer
-            await self._registry.send_to_user_async(
-                user_id,
-                {
-                    "type": "answer_result",
-                    "matchId": match_id,
-                    "cardId": card.id,
-                    "correct": correct,
-                    "points": points,
-                },
-            )
-            if correct:
-                await self._end_card(room, user_id, "correct")
-            else:
-                await self._send_opponent(
-                    room,
-                    user_id,
-                    {
-                        "type": "opponent_action",
-                        "matchId": match_id,
-                        "cardId": card.id,
-                        "action": "wrong",
-                    },
-                )
-                if all(player.done for player in room.players.values()):
-                    await self._end_card(room, None, "both_done")
+            if all(player.done for player in room.players.values()):
+                await self._end_card(room, "both_done")
 
     async def dont_know(self, user_id: int, match_id: int, card_id: Any) -> None:
         room = self._rooms.get(match_id)
@@ -290,18 +265,8 @@ class MatchEngine:
                 response_ms=round((monotonic() - room.card_started) * 1000),
                 points=0,
             )
-            await self._send_opponent(
-                room,
-                user_id,
-                {
-                    "type": "opponent_action",
-                    "matchId": match_id,
-                    "cardId": card.id,
-                    "action": "dont_know",
-                },
-            )
             if all(player.done for player in room.players.values()):
-                await self._end_card(room, None, "both_done")
+                await self._end_card(room, "both_done")
 
     async def _get_room(self, match_id: int) -> Room | None:
         if match_id in self._rooms:
@@ -351,9 +316,9 @@ class MatchEngine:
         async with room.lock:
             card = self._current_card(room)
             if not room.card_ended and card is not None and card.id == card_id:
-                await self._end_card(room, None, "timeout")
+                await self._end_card(room, "timeout")
 
-    async def _end_card(self, room: Room, winner_id: int | None, reason: str) -> None:
+    async def _end_card(self, room: Room, reason: str) -> None:
         card = self._current_card(room)
         if card is None or room.card_ended:
             return
@@ -363,22 +328,55 @@ class MatchEngine:
             room.timer.cancel()
         answers = [state.answer for state in room.players.values() if state.answer is not None]
         for user_id, state in room.players.items():
-            if user_id != winner_id:
-                room.streaks[user_id] = 0
             if state.answer is None:
-                answers.append(
-                    MatchAnswer(
-                        match_id=room.match.id,
-                        card_id=card.id,
-                        user_id=user_id,
-                        action=MatchAction.TIMEOUT,
-                        selected_index=None,
-                        correct=False,
-                        response_ms=None,
-                        points=0,
-                    )
+                timeout_answer = MatchAnswer(
+                    match_id=room.match.id,
+                    card_id=card.id,
+                    user_id=user_id,
+                    action=MatchAction.TIMEOUT,
+                    selected_index=None,
+                    correct=False,
+                    response_ms=None,
+                    points=0,
                 )
+                state.answer = timeout_answer
+                answers.append(timeout_answer)
+
+        correct_answers = sorted(
+            (answer for answer in answers if answer.correct),
+            key=lambda answer: (
+                answer.response_ms if answer.response_ms is not None else CARD_SECONDS * 1000
+            ),
+        )
+        winner_id = correct_answers[0].user_id if correct_answers else None
+        for answer in answers:
+            if answer.correct and answer.user_id == winner_id:
+                room.streaks[answer.user_id] += 1
+                if room.streaks[answer.user_id] % 3 == 0:
+                    answer.points += 5
+            elif answer.correct:
+                answer.points = 0
+                room.streaks[answer.user_id] = 0
+            else:
+                room.streaks[answer.user_id] = 0
+            room.scores[answer.user_id] += answer.points
+
         await run_in_threadpool(persist_card, room.match.id, room.scores.copy(), answers)
+        await asyncio.gather(
+            *(
+                self._registry.send_to_user_async(
+                    answer.user_id,
+                    {
+                        "type": "answer_result",
+                        "matchId": room.match.id,
+                        "cardId": card.id,
+                        "correct": answer.correct,
+                        "points": answer.points,
+                    },
+                )
+                for answer in answers
+            )
+        )
         await self._broadcast(
             room,
             {
@@ -386,7 +384,7 @@ class MatchEngine:
                 "matchId": room.match.id,
                 "cardId": card.id,
                 "winnerId": winner_id,
-                "reason": reason,
+                "reason": "correct" if winner_id is not None else reason,
                 "card": card.model_dump(by_alias=True, mode="json"),
                 "scores": {str(k): v for k, v in room.scores.items()},
             },

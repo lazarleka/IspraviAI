@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from app.decks.models.deck import DeckStatus
 from app.decks.schemas.card import CardAnswerSchema
@@ -12,11 +12,20 @@ from app.matches.models.match_answer import MatchAction
 from app.users.schemas.user import PublicUserSchema
 from app.utils.schemas import CamelCaseModel, CamelCaseResponseModel, UtcDatetime
 
+_SOURCE_SELECTION_ERROR = "Provide exactly one of topic or deckId"
+
 
 class ChallengeCreateSchema(CamelCaseModel):
     opponent_id: int
-    topic: str = Field(min_length=3, max_length=200)
+    topic: str | None = Field(default=None, min_length=3, max_length=200)
+    deck_id: int | None = Field(default=None, gt=0)
     card_count: Literal[5, 10, 15] = 10
+
+    @model_validator(mode="after")
+    def exactly_one_source(self) -> ChallengeCreateSchema:
+        if (self.topic is None) == (self.deck_id is None):
+            raise ValueError(_SOURCE_SELECTION_ERROR)
+        return self
 
 
 class ChallengeResponseSchema(CamelCaseResponseModel):

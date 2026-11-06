@@ -18,6 +18,10 @@ export function useDeclineChallenge() {
   return useMutation({ mutationFn: matchesApi.declineChallenge })
 }
 
+export function useMatches() {
+  return useQuery({ queryKey: ['matches'], queryFn: matchesApi.listMatches })
+}
+
 export function useMatch(id: number) {
   return useQuery({
     queryKey: ['matches', id],

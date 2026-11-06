@@ -6,6 +6,7 @@ from typing import Protocol
 from fastapi import BackgroundTasks
 
 from app.auth.schemas.auth import CurrentUser
+from app.decks.exceptions.deck import DeckNotFoundException, NotDeckOwnerException
 from app.decks.generation.pipeline import generate_deck_cards
 from app.decks.models.deck import Deck, DeckKind, DeckSourceType, DeckStatus
 from app.decks.repositories.deck import IDeckRepository
@@ -89,20 +90,30 @@ class MatchService(IMatchService):
             if friendship.user_low_id == current_user.id
             else friendship.user_low
         )
-        topic = data.topic.strip()
-        deck = self._deck_repository.add(
-            Deck(
-                title=topic[:80],
-                subject="other",
-                source_type=DeckSourceType.TOPIC,
-                topic=topic,
-                file_name=None,
-                kind=DeckKind.MATCH,
-                requested_cards=data.card_count,
-                source_text=topic,
-                owner_id=current_user.id,
+        if data.deck_id is not None:
+            deck = self._deck_repository.get_by_id(data.deck_id)
+            if deck is None:
+                raise DeckNotFoundException
+            if deck.owner_id != current_user.id:
+                raise NotDeckOwnerException
+            if deck.status == DeckStatus.FAILED:
+                raise DeckGenerationFailedException
+            topic = deck.title
+        else:
+            topic = (data.topic or "").strip()
+            deck = self._deck_repository.add(
+                Deck(
+                    title=topic[:80],
+                    subject="other",
+                    source_type=DeckSourceType.TOPIC,
+                    topic=topic,
+                    file_name=None,
+                    kind=DeckKind.MATCH,
+                    requested_cards=data.card_count,
+                    source_text=topic,
+                    owner_id=current_user.id,
+                )
             )
-        )
         challenge = self._repository.add_challenge(
             Challenge(
                 challenger_id=current_user.id,
@@ -116,7 +127,8 @@ class MatchService(IMatchService):
                 deck=deck,
             )
         )
-        tasks.add_task(generate_deck_cards, deck.id)
+        if data.deck_id is None:
+            tasks.add_task(generate_deck_cards, deck.id)
         response = self._challenge_response(challenge)
         self._push(data.opponent_id, "challenge_received", response)
         return response
@@ -207,7 +219,7 @@ class MatchService(IMatchService):
                         MatchAnswerSchema.model_validate(a) for a in answers if a.card_id == card.id
                     ],
                 )
-                for card in match.challenge.deck.cards
+                for card in match.challenge.deck.cards[: match.challenge.card_count]
             ],
         )
 

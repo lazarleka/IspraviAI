@@ -22,6 +22,7 @@ const AUTH_FAILED_CODE = 4401
 
 const listeners = new Set<(message: RealtimeMessage) => void>()
 const userIdListeners = new Set<() => void>()
+const statusListeners = new Set<() => void>()
 let mockServer: MockServer | null = null
 let socket: WebSocket | null = null
 let connectedToken: string | null = null
@@ -30,6 +31,13 @@ let reconnectTimer: ReturnType<typeof setTimeout> | undefined
 let pingTimer: ReturnType<typeof setInterval> | undefined
 let attempt = 0
 let myUserId: number | null = null
+export type RealtimeStatus = 'disconnected' | 'connecting' | 'connected' | 'reconnecting'
+let realtimeStatus: RealtimeStatus = 'disconnected'
+
+function setRealtimeStatus(status: RealtimeStatus) {
+  realtimeStatus = status
+  for (const listener of statusListeners) listener()
+}
 
 function setMyUserId(id: number | null) {
   myUserId = id
@@ -37,7 +45,10 @@ function setMyUserId(id: number | null) {
 }
 
 function dispatch(message: RealtimeMessage) {
-  if (message.type === 'auth_ok' && typeof message.userId === 'number') setMyUserId(message.userId)
+  if (message.type === 'auth_ok' && typeof message.userId === 'number') {
+    setMyUserId(message.userId)
+    setRealtimeStatus('connected')
+  }
   for (const listener of listeners) listener(message)
 }
 
@@ -46,6 +57,7 @@ function isMessage(value: unknown): value is RealtimeMessage {
 }
 
 function openSocket(token: string) {
+  setRealtimeStatus(attempt === 0 ? 'connecting' : 'reconnecting')
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
   const ws = new WebSocket(`${protocol}://${window.location.host}/api/ws`)
   socket = ws
@@ -68,7 +80,11 @@ function openSocket(token: string) {
   ws.onclose = (event) => {
     clearInterval(pingTimer)
     socket = null
-    if (!connectedToken || event.code === AUTH_FAILED_CODE) return
+    if (!connectedToken || event.code === AUTH_FAILED_CODE) {
+      setRealtimeStatus('disconnected')
+      return
+    }
+    setRealtimeStatus('reconnecting')
     const backoff = Math.min(1000 * 2 ** attempt, MAX_BACKOFF_MS)
     attempt += 1
     reconnectTimer = setTimeout(() => {
@@ -82,7 +98,10 @@ export function connect(token: string) {
   disconnect()
   connectedToken = token
   if (REALTIME_MODE === 'ws') openSocket(token)
-  else mockServer?.connect(dispatch)
+  else {
+    setRealtimeStatus('connected')
+    mockServer?.connect(dispatch)
+  }
 }
 
 export function disconnect() {
@@ -93,6 +112,7 @@ export function disconnect() {
   socket?.close()
   socket = null
   setMyUserId(null)
+  setRealtimeStatus('disconnected')
 }
 
 export function send(message: RealtimeMessage) {
@@ -146,5 +166,18 @@ export function useMyUserId(): number | null {
     },
     () => myUserId,
     () => myUserId,
+  )
+}
+
+export function useRealtimeStatus(): RealtimeStatus {
+  return useSyncExternalStore(
+    (listener) => {
+      statusListeners.add(listener)
+      return () => {
+        statusListeners.delete(listener)
+      }
+    },
+    () => realtimeStatus,
+    () => realtimeStatus,
   )
 }

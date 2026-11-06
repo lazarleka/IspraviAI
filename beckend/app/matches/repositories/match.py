@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Protocol
 
-from sqlalchemy import or_, select
+from sqlalchemy import case, func, or_, select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import Select
 
@@ -15,6 +16,18 @@ from app.utils.di import inject
 from app.utils.pagination import Page, PaginationParams, paginate
 
 
+@dataclass(frozen=True)
+class MatchStats:
+    played: int
+    wins: int
+    losses: int
+    draws: int
+    total_score: int
+    best_score: int
+    correct_answers: int
+    wrong_answers: int
+
+
 class IMatchRepository(Protocol):
     def add_challenge(self, challenge: Challenge) -> Challenge: ...
     def get_challenge(self, challenge_id: int) -> Challenge | None: ...
@@ -25,6 +38,7 @@ class IMatchRepository(Protocol):
     def list_finished(self, user_id: int, pagination: PaginationParams) -> Page[Match]: ...
     def answers_for_match(self, match_id: int) -> list[MatchAnswer]: ...
     def add_answers(self, answers: list[MatchAnswer]) -> None: ...
+    def stats_for_user(self, user_id: int) -> MatchStats: ...
 
 
 @inject(alias=IMatchRepository)
@@ -116,3 +130,48 @@ class MatchRepository(IMatchRepository):
         db = self._session_factory()
         db.add_all(answers)
         db.flush()
+
+    def stats_for_user(self, user_id: int) -> MatchStats:
+        score = case((Match.player1_id == user_id, Match.player1_score), else_=Match.player2_score)
+        finished = [MatchStatus.FINISHED, MatchStatus.ABANDONED]
+        match_row = (
+            self._session_factory()
+            .execute(
+                select(
+                    func.count(Match.id),
+                    func.count(Match.id).filter(Match.winner_id == user_id),
+                    func.count(Match.id).filter(Match.winner_id.is_(None)),
+                    func.coalesce(func.sum(score), 0),
+                    func.coalesce(func.max(score), 0),
+                ).where(
+                    or_(Match.player1_id == user_id, Match.player2_id == user_id),
+                    Match.status.in_(finished),
+                )
+            )
+            .one()
+        )
+        answer_row = (
+            self._session_factory()
+            .execute(
+                select(
+                    func.count(MatchAnswer.id),
+                    func.count(MatchAnswer.id).filter(MatchAnswer.correct.is_(True)),
+                ).where(MatchAnswer.user_id == user_id)
+            )
+            .one()
+        )
+        played = int(match_row[0])
+        wins = int(match_row[1])
+        draws = int(match_row[2])
+        answers = int(answer_row[0])
+        correct = int(answer_row[1])
+        return MatchStats(
+            played=played,
+            wins=wins,
+            losses=played - wins - draws,
+            draws=draws,
+            total_score=int(match_row[3]),
+            best_score=int(match_row[4]),
+            correct_answers=correct,
+            wrong_answers=answers - correct,
+        )

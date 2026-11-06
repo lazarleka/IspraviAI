@@ -4,8 +4,10 @@ import { UserAvatar } from '@/components/user-avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { PublicUser } from '@/lib/users'
+import { cn } from '@/lib/utils'
 
 import { useFriends } from '../api/use-friends'
+import type { Friendship } from '../types'
 
 type FriendListProps = {
   /** Rendered on the right of every friend, e.g. the "Izazovi" button from matches (passed in by the route). */
@@ -44,23 +46,59 @@ export function FriendList({ renderAction }: FriendListProps) {
     )
   }
 
-  // Online friends first: they are the ones you can challenge right now.
-  const sorted = [...friends.data.items].sort((a, b) => Number(b.online) - Number(a.online))
+  const online = friends.data.items.filter((friendship) => friendship.online)
+  const offline = friends.data.items.filter((friendship) => !friendship.online)
 
   return (
-    <ul className="flex flex-col gap-2">
-      {sorted.map(({ id, friend, online }) => (
-        <li key={id} className="flex min-h-16 items-center gap-3 rounded-xl bg-secondary p-3">
-          <UserAvatar name={friend.displayName} online={online} />
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-sm font-semibold">{friend.displayName}</span>
-            <span className="text-xs text-muted-foreground">
-              @{friend.username} · {online ? 'online' : 'offline'}
+    <div className="flex flex-col gap-5">
+      {online.length > 0 ? (
+        <FriendGroup title="Dostupni sada" friendships={online} renderAction={renderAction} />
+      ) : (
+        <p className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+          Trenutno niko od prijatelja nije online.
+        </p>
+      )}
+      {offline.length > 0 ? (
+        <FriendGroup title="Offline" friendships={offline} renderAction={renderAction} muted />
+      ) : null}
+    </div>
+  )
+}
+
+function FriendGroup({
+  title,
+  friendships,
+  renderAction,
+  muted = false,
+}: {
+  title: string
+  friendships: Friendship[]
+  renderAction?: FriendListProps['renderAction']
+  muted?: boolean
+}) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{title}</h3>
+      <ul className="flex flex-col gap-2">
+        {friendships.map(({ id, friend, online }) => (
+          <li
+            key={id}
+            className={cn(
+              'flex min-h-16 items-center gap-3 rounded-xl bg-secondary p-3',
+              muted && 'opacity-70',
+            )}
+          >
+            <UserAvatar name={friend.displayName} online={online} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-semibold">{friend.displayName}</span>
+              <span className="text-xs text-muted-foreground">
+                @{friend.username} · {online ? 'online' : 'nije trenutno dostupan'}
+              </span>
             </span>
-          </span>
-          {renderAction?.(friend, online)}
-        </li>
-      ))}
-    </ul>
+            {renderAction?.(friend, online)}
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

@@ -80,18 +80,30 @@ def test_register_rejects_invalid_username(client: TestClient) -> None:
 
 @pytest.mark.usefixtures("auth_headers")
 def test_login_ok_and_wrong_password(client: TestClient) -> None:
-    ok = client.post("/api/auth/login", json={"email": "ana@example.com", "password": "secret123"})
+    ok = client.post(
+        "/api/auth/login", json={"identifier": "ana@example.com", "password": "secret123"}
+    )
     assert ok.status_code == 200
     assert ok.json()["token"]
 
-    wrong = client.post("/api/auth/login", json={"email": "ana@example.com", "password": "nope"})
+    by_username = client.post(
+        "/api/auth/login", json={"identifier": "ANA", "password": "secret123"}
+    )
+    assert by_username.status_code == 200
+    assert by_username.json()["user"]["email"] == "ana@example.com"
+
+    wrong = client.post("/api/auth/login", json={"identifier": "ana", "password": "nope"})
     assert wrong.status_code == 401
-    assert wrong.json() == {"detail": "Invalid email or password", "code": "invalid_credentials"}
+    assert wrong.json() == {
+        "detail": "Invalid email, username or password",
+        "code": "invalid_credentials",
+    }
 
 
 def test_login_unknown_email_gives_the_same_401(client: TestClient) -> None:
     response = client.post(
-        "/api/auth/login", json={"email": "nobody@example.com", "password": "secret123"}
+        "/api/auth/login",
+        json={"identifier": "nobody@example.com", "password": "secret123"},
     )
 
     assert response.status_code == 401

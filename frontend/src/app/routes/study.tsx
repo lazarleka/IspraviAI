@@ -28,5 +28,9 @@ export function StudyPage() {
     )
   }
 
-  return <StudySession deckId={id} subject={deck.data.subject} />
+  return (
+    <div className="mx-auto w-full max-w-4xl">
+      <StudySession deckId={id} subject={deck.data.subject} />
+    </div>
+  )
 }
