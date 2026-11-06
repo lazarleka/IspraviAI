@@ -17,7 +17,7 @@ export function StudyTodayCard() {
   const label = count === 1 ? 'kartica' : count >= 2 && count <= 4 ? 'kartice' : 'kartica'
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary p-4 text-secondary-foreground">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-secondary p-5 text-secondary-foreground lg:p-6">
       <div>
         <p className="text-sm text-muted-foreground">Danas za ponavljanje</p>
         <p className="font-heading text-3xl font-bold text-foreground">

@@ -1,14 +1,22 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Protocol
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.database.session_factory import ISessionFactory
 from app.decks.models.card import Card
 from app.study.models.card_progress import CardProgress
 from app.utils.di import inject
+
+
+@dataclass(frozen=True)
+class StudyStats:
+    cards_reviewed: int
+    correct_answers: int
+    wrong_answers: int
 
 
 class IStudyRepository(Protocol):
@@ -21,6 +29,7 @@ class IStudyRepository(Protocol):
     ) -> dict[int, CardProgress]: ...
 
     def add_progress(self, progress: CardProgress) -> CardProgress: ...
+    def stats_for_user(self, user_id: int) -> StudyStats: ...
 
 
 @inject(alias=IStudyRepository)
@@ -55,3 +64,23 @@ class StudyRepository(IStudyRepository):
         db.add(progress)
         db.flush()
         return progress
+
+    def stats_for_user(self, user_id: int) -> StudyStats:
+        row = (
+            self._session_factory()
+            .execute(
+                select(
+                    func.coalesce(
+                        func.sum(CardProgress.correct_count + CardProgress.wrong_count), 0
+                    ),
+                    func.coalesce(func.sum(CardProgress.correct_count), 0),
+                    func.coalesce(func.sum(CardProgress.wrong_count), 0),
+                ).where(CardProgress.user_id == user_id)
+            )
+            .one()
+        )
+        return StudyStats(
+            cards_reviewed=int(row[0]),
+            correct_answers=int(row[1]),
+            wrong_answers=int(row[2]),
+        )

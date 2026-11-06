@@ -9,7 +9,7 @@ import { useLogin } from '../api/use-auth'
 import { FormField } from './form-field'
 
 const schema = z.object({
-  email: z.email({ error: 'Unesi ispravan email.' }),
+  identifier: z.string().trim().min(3, { error: 'Unesi email ili korisničko ime.' }),
   password: z.string().min(1, { error: 'Unesi lozinku.' }),
 })
 
@@ -31,19 +31,19 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   const formError =
     login.error instanceof ApiError && login.error.code === 'invalid_credentials'
-      ? 'Pogrešan email ili lozinka.'
+      ? 'Pogrešan email, korisničko ime ili lozinka.'
       : login.error?.message
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
       <FormField
-        id="email"
-        label="Email"
-        type="email"
-        autoComplete="email"
-        placeholder="ana@primjer.me"
-        error={errors.email?.message}
-        {...register('email')}
+        id="identifier"
+        label="Email ili korisničko ime"
+        type="text"
+        autoComplete="username"
+        placeholder="ana@primjer.me ili ana"
+        error={errors.identifier?.message}
+        {...register('identifier')}
       />
       <FormField
         id="password"

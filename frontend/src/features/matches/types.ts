@@ -20,11 +20,9 @@ export type Challenge = {
   createdAt: string
 }
 
-export type NewChallenge = {
-  opponentId: number
-  topic: string
-  cardCount: number
-}
+export type NewChallenge =
+  | { opponentId: number; topic: string; deckId?: never; cardCount: number }
+  | { opponentId: number; deckId: number; topic?: never; cardCount: number }
 
 export type MatchStatus = 'waiting' | 'in_progress' | 'finished' | 'abandoned'
 
@@ -70,7 +68,6 @@ export type MatchMessage =
   | { type: 'match_ready'; matchId: number; startsAt: string }
   | { type: 'card_start'; matchId: number; index: number; total: number; card: CardQuestion; endsAt: string }
   | { type: 'answer_result'; matchId: number; cardId: number; correct: boolean; points: number }
-  | { type: 'opponent_action'; matchId: number; cardId: number; action: 'wrong' | 'dont_know' }
   | {
       type: 'card_end'
       matchId: number
@@ -88,7 +85,6 @@ const MATCH_TYPES = new Set([
   'match_ready',
   'card_start',
   'answer_result',
-  'opponent_action',
   'card_end',
   'opponent_disconnected',
   'match_end',

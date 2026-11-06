@@ -46,6 +46,10 @@ def test_register_returns_201_with_token_and_user(client: TestClient, auth_servi
             "email": "ana@example.com",
             "username": "test_user",
             "displayName": "Test User",
+            "avatarColor": "amber",
+            "dailyGoal": 10,
+            "soundEnabled": True,
+            "animationsEnabled": True,
             "createdAt": "2026-01-01T00:00:00Z",
         },
     }
@@ -92,9 +96,7 @@ def test_register_duplicate_username_is_409_with_field_error(
 def test_login_wrong_password_is_401(client: TestClient, auth_service: Mock) -> None:
     auth_service.login.side_effect = InvalidCredentialsException()
 
-    response = client.post(
-        "/api/auth/login", json={"email": "ana@example.com", "password": "wrong"}
-    )
+    response = client.post("/api/auth/login", json={"identifier": "ana", "password": "wrong"})
 
     assert response.status_code == 401
     assert response.json()["code"] == "invalid_credentials"

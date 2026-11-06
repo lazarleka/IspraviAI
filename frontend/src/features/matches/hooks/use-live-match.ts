@@ -29,7 +29,6 @@ type LiveState = {
   /** What I did on this card: the segment I tapped (null = "Nema greške"), or "Ne znam". */
   myAction: { kind: 'tap'; index: number | null } | { kind: 'dont_know' } | null
   myResult: { correct: boolean; points: number } | null
-  opponentAction: 'wrong' | 'dont_know' | null
   lockedIndexes: number[]
   end: CardEnd | null
   scores: Scores
@@ -54,7 +53,6 @@ const initialState: LiveState = {
   endsAt: null,
   myAction: null,
   myResult: null,
-  opponentAction: null,
   lockedIndexes: [],
   end: null,
   scores: {},
@@ -84,7 +82,6 @@ function reducer(state: LiveState, action: Action): LiveState {
         endsAt: Date.parse(message.endsAt),
         myAction: null,
         myResult: null,
-        opponentAction: null,
         lockedIndexes: [],
         end: null,
         opponentDisconnected: false,
@@ -99,8 +96,6 @@ function reducer(state: LiveState, action: Action): LiveState {
         lockedIndexes: locked,
       }
     }
-    case 'opponent_action':
-      return { ...state, opponentAction: message.action }
     case 'card_end':
       return {
         ...state,
@@ -125,6 +120,10 @@ export function useLiveMatch(matchId: number) {
   const [state, dispatch] = useReducer(reducer, initialState)
 
   useRealtimeMessages((message) => {
+    if (message.type === 'auth_ok') {
+      send({ type: 'match_join', matchId })
+      return
+    }
     if (message.type === 'error' && typeof message.code === 'string') {
       dispatch({ type: 'error', code: message.code })
       return

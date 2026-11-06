@@ -1,6 +1,6 @@
 // MOCK backend for challenges and live matches, used until the FastAPI backend has /api/challenges,
 // /api/matches and /api/ws. It follows SPEC.md §6 and docs/entities.md: the server decides who was
-// first, runs the 20 s timer, and sends the answer only in card_end. The opponent is a bot.
+// first, runs the 20 s timer, and reveals results only after both players finish. The opponent is a bot.
 import { ApiError } from '@/lib/api-client'
 import type { CardAnswer, CardQuestion } from '@/lib/cards'
 import type { Emit, MockServer, RealtimeMessage } from '@/lib/realtime'
@@ -96,7 +96,7 @@ function createChallenge(input: NewChallenge): Challenge {
     id: nextId++,
     challenger: ME,
     opponent,
-    topic: input.topic,
+    topic: input.topic ?? 'Izabrani špil',
     cardCount: input.cardCount,
     status: 'pending',
     deckStatus: 'generating',
@@ -188,7 +188,7 @@ function startCard(room: Room) {
     card: question(card),
     endsAt: new Date(room.cardStartedAt + CARD_MS).toISOString(),
   })
-  later(room, CARD_MS, () => endCard(room, null, 'timeout'))
+  later(room, CARD_MS, () => endCard(room, 'timeout'))
   scheduleBot(room, card)
 }
 
@@ -227,22 +227,10 @@ function answer(room: Room, userId: number, selectedIndex: number | null) {
   const responseMs = Date.now() - room.cardStartedAt
   const correct = selectedIndex === card.wrongIndex
   const remaining = Math.max(0, CARD_MS - responseMs)
-  let points = correct ? 10 + Math.round((5 * remaining) / CARD_MS) : -5
-
-  if (correct) {
-    room.streaks[userId] = (room.streaks[userId] ?? 0) + 1
-    if ((room.streaks[userId] ?? 0) % 3 === 0) points += 5
-  }
-  addPoints(room, userId, points)
+  const points = correct ? 10 + Math.round((5 * remaining) / CARD_MS) : -5
   record(room, { cardId: card.id, userId, action: 'tap', selectedIndex, correct, responseMs, points })
 
-  if (userId === ME.id)
-    emit({ type: 'answer_result', matchId: room.match.id, cardId: card.id, correct, points })
-  else if (!correct)
-    emit({ type: 'opponent_action', matchId: room.match.id, cardId: card.id, action: 'wrong' })
-
-  if (correct) endCard(room, userId, 'correct')
-  else if (allDone(room)) endCard(room, null, 'both_done')
+  if (allDone(room)) endCard(room, 'both_done')
 }
 
 function dontKnow(room: Room, userId: number) {
@@ -258,25 +246,21 @@ function dontKnow(room: Room, userId: number) {
     responseMs: Date.now() - room.cardStartedAt,
     points: 0,
   })
-  if (userId !== ME.id)
-    emit({ type: 'opponent_action', matchId: room.match.id, cardId: card.id, action: 'dont_know' })
-  if (allDone(room)) endCard(room, null, 'both_done')
+  if (allDone(room)) endCard(room, 'both_done')
 }
 
 function allDone(room: Room) {
   return Object.values(room.players).every((p) => p.done)
 }
 
-function endCard(room: Room, winnerId: number | null, reason: 'correct' | 'both_done' | 'timeout') {
+function endCard(room: Room, reason: 'both_done' | 'timeout') {
   const card = currentCard(room)
   if (!card || room.cardEnded) return
   room.cardEnded = true
   for (const timer of room.timers) clearTimeout(timer)
   room.timers = []
 
-  // A player who did not win the card loses their streak.
   for (const id of [room.match.player1.id, room.match.player2.id]) {
-    if (id !== winnerId) room.streaks[id] = 0
     const state = room.players[id]
     if (state && !state.done) {
       record(room, {
@@ -291,12 +275,44 @@ function endCard(room: Room, winnerId: number | null, reason: 'correct' | 'both_
     }
   }
 
+  const answers = Object.values(room.players)
+    .map((state) => state.answer)
+    .filter((answer): answer is MatchAnswer => answer !== null)
+  const correctAnswers = answers
+    .filter((answer) => answer.correct)
+    .sort((first, second) => (first.responseMs ?? CARD_MS) - (second.responseMs ?? CARD_MS))
+  const winnerId = correctAnswers[0]?.userId ?? null
+
+  for (const answer of answers) {
+    if (answer.correct && answer.userId === winnerId) {
+      room.streaks[answer.userId] = (room.streaks[answer.userId] ?? 0) + 1
+      if ((room.streaks[answer.userId] ?? 0) % 3 === 0) answer.points += 5
+    } else if (answer.correct) {
+      answer.points = 0
+      room.streaks[answer.userId] = 0
+    } else {
+      room.streaks[answer.userId] = 0
+    }
+    addPoints(room, answer.userId, answer.points)
+  }
+
+  const myAnswer = room.players[ME.id]?.answer
+  if (myAnswer) {
+    emit({
+      type: 'answer_result',
+      matchId: room.match.id,
+      cardId: card.id,
+      correct: myAnswer.correct,
+      points: myAnswer.points,
+    })
+  }
+
   emit({
     type: 'card_end',
     matchId: room.match.id,
     cardId: card.id,
     winnerId,
-    reason,
+    reason: winnerId === null ? reason : 'correct',
     card,
     scores: scoresOf(room),
   })

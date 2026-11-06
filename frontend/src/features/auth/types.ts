@@ -1,9 +1,15 @@
 // User and auth payloads, see docs/entities.md ("User").
+import type { AvatarColor } from '@/lib/users'
+
 export type User = {
   id: number
   email: string
   username: string
   displayName: string
+  avatarColor: AvatarColor
+  dailyGoal: number
+  soundEnabled: boolean
+  animationsEnabled: boolean
   createdAt: string
 }
 
@@ -13,7 +19,7 @@ export type AuthResponse = {
 }
 
 export type LoginInput = {
-  email: string
+  identifier: string
   password: string
 }
 

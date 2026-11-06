@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.database.session_factory import ISessionFactory
 from app.users.models.user import User
@@ -13,6 +13,8 @@ class IAuthRepository(Protocol):
     def get_user_by_id(self, user_id: int) -> User | None: ...
 
     def get_user_by_email(self, email: str) -> User | None: ...
+
+    def get_user_by_identifier(self, identifier: str) -> User | None: ...
 
     def add_user(self, user: User) -> User: ...
 
@@ -29,6 +31,12 @@ class AuthRepository(IAuthRepository):
     def get_user_by_email(self, email: str) -> User | None:
         db = self._session_factory()
         return db.scalar(select(User).where(User.email == email))
+
+    def get_user_by_identifier(self, identifier: str) -> User | None:
+        db = self._session_factory()
+        return db.scalar(
+            select(User).where(or_(User.email == identifier, User.username == identifier))
+        )
 
     def add_user(self, user: User) -> User:
         db = self._session_factory()

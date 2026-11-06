@@ -86,7 +86,7 @@ export function DeckOverview({ deckId }: DeckOverviewProps) {
 
       <Button
         variant="ghost"
-        className="self-start text-destructive"
+        className="absolute top-0 right-0 text-destructive"
         onClick={onDelete}
         disabled={deleteDeck.isPending}
       >

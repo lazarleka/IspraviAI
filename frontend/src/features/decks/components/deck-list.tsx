@@ -10,7 +10,7 @@ export function DeckList() {
 
   if (decks.isPending) {
     return (
-      <div className="flex flex-col gap-2" aria-busy="true" aria-label="Učitavam špilove">
+      <div className="grid gap-2 md:grid-cols-2" aria-busy="true" aria-label="Učitavam špilove">
         {[0, 1, 2].map((i) => (
           <Skeleton key={i} className="h-16 rounded-xl bg-secondary" />
         ))}
@@ -31,7 +31,7 @@ export function DeckList() {
 
   if (decks.data.items.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border bg-secondary p-6 text-center">
+      <div className="flex min-h-52 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-secondary p-6 text-center lg:min-h-72">
         <p className="font-semibold">Napravi svoje prve kartice</p>
         <p className="text-sm text-muted-foreground">
           Unesi temu ili ubaci skriptu, a AI napravi kartice sa greškama.
@@ -43,7 +43,7 @@ export function DeckList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-2">
+      <ul className="grid gap-3 md:grid-cols-2">
         {decks.data.items.map((deck) => (
           <li key={deck.id}>
             <DeckRow deck={deck} />

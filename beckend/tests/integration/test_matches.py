@@ -83,3 +83,52 @@ def test_challenge_validates_and_requires_auth(client: TestClient) -> None:
         headers=ana,
     )
     assert invalid.status_code == 422
+
+
+def test_challenge_can_use_own_deck(client: TestClient) -> None:
+    ana, _, marko_id = make_friends(client)
+    deck = client.post(
+        "/api/decks",
+        json={"topic": "Ćelijska biologija", "requestedCards": 10},
+        headers=ana,
+    )
+    assert deck.status_code == 201, deck.text
+
+    created = client.post(
+        "/api/challenges",
+        json={"opponentId": marko_id, "deckId": deck.json()["id"], "cardCount": 5},
+        headers=ana,
+    )
+
+    assert created.status_code == 201, created.text
+    assert created.json()["topic"] == deck.json()["title"]
+    assert created.json()["deckStatus"] == "ready"
+
+
+def test_challenge_rejects_foreign_deck_and_ambiguous_source(client: TestClient) -> None:
+    ana, marko, marko_id = make_friends(client)
+    foreign_deck = client.post(
+        "/api/decks",
+        json={"topic": "Istorija Crne Gore", "requestedCards": 10},
+        headers=marko,
+    )
+
+    forbidden = client.post(
+        "/api/challenges",
+        json={"opponentId": marko_id, "deckId": foreign_deck.json()["id"], "cardCount": 5},
+        headers=ana,
+    )
+    assert forbidden.status_code == 403
+    assert forbidden.json()["code"] == "not_deck_owner"
+
+    ambiguous = client.post(
+        "/api/challenges",
+        json={
+            "opponentId": marko_id,
+            "deckId": foreign_deck.json()["id"],
+            "topic": "Istorija",
+            "cardCount": 5,
+        },
+        headers=ana,
+    )
+    assert ambiguous.status_code == 422

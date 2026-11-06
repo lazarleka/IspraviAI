@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import AliasChoices, BaseModel, EmailStr, Field
 
 from app.users.schemas.user import UserResponseSchema
 from app.utils.schemas import CamelCaseModel
@@ -17,7 +17,11 @@ class RegisterRequestSchema(CamelCaseModel):
 
 
 class LoginRequestSchema(CamelCaseModel):
-    email: EmailStr
+    identifier: str = Field(
+        min_length=3,
+        max_length=254,
+        validation_alias=AliasChoices("identifier", "email"),
+    )
     password: str = Field(min_length=1, max_length=72)
 
 
@@ -33,6 +37,10 @@ class CurrentUser(BaseModel):
     email: str
     username: str
     display_name: str
+    avatar_color: str
+    daily_goal: int
+    sound_enabled: bool
+    animations_enabled: bool
     created_at: datetime
 
 

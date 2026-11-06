@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useBlocker, useNavigate } from 'react-router'
 
 import { AnswerReveal } from '@/components/card/answer-reveal'
 import { SegmentCard } from '@/components/card/segment-card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useMyUserId } from '@/lib/realtime'
+import { useMyUserId, useRealtimeStatus } from '@/lib/realtime'
 import { cn } from '@/lib/utils'
 
 import { useMatch } from '../api/use-matches'
@@ -22,7 +22,13 @@ export function MatchBoard({ matchId }: MatchBoardProps) {
   const match = useMatch(matchId)
   const live = useLiveMatch(matchId)
   const myUserId = useMyUserId()
+  const realtimeStatus = useRealtimeStatus()
   const navigate = useNavigate()
+  const active =
+    match.data !== undefined &&
+    live.phase !== 'finished' &&
+    !['finished', 'abandoned'].includes(match.data.status)
+  useLeaveMatchConfirmation(active)
 
   useEffect(() => {
     if (live.phase !== 'finished') return
@@ -73,6 +79,14 @@ export function MatchBoard({ matchId }: MatchBoardProps) {
         index={live.index}
         total={live.total}
       />
+
+      {realtimeStatus !== 'connected' ? (
+        <p role="status" className="rounded-xl bg-secondary p-3 text-center text-sm">
+          {realtimeStatus === 'reconnecting'
+            ? 'Veza je prekinuta. Povezujem te ponovo…'
+            : 'Povezujem se sa mečom…'}
+        </p>
+      ) : null}
 
       {live.phase === 'finished' ? (
         <p className="py-10 text-center font-heading text-2xl font-bold">
@@ -143,13 +157,30 @@ export function MatchBoard({ matchId }: MatchBoardProps) {
           ) : null}
           {live.phase === 'card' && live.canAnswer ? (
             <p className="text-center text-xs text-muted-foreground">
-              Tapni pogrešan dio. Prvi tačan odgovor nosi poene.
+              Tapni pogrešan dio. Rezultat se prikazuje kada oba igrača odgovore.
             </p>
           ) : null}
         </>
       )}
     </section>
   )
+}
+
+function useLeaveMatchConfirmation(active: boolean) {
+  const blocker = useBlocker(active)
+
+  useEffect(() => {
+    if (blocker.state !== 'blocked') return
+    if (window.confirm('Meč je još u toku. Da li stvarno želiš da ga napustiš?')) blocker.proceed()
+    else blocker.reset()
+  }, [blocker])
+
+  useEffect(() => {
+    if (!active) return
+    const preventClose = (event: BeforeUnloadEvent) => event.preventDefault()
+    window.addEventListener('beforeunload', preventClose)
+    return () => window.removeEventListener('beforeunload', preventClose)
+  }, [active])
 }
 
 type Status = { text: string; tone: 'good' | 'bad' | 'neutral' }
@@ -163,22 +194,13 @@ function statusLine(
 
   if (live.phase === 'card_end' && live.end) {
     if (live.end.winnerId === meId) {
-      return { text: `Ti si bio brži! +${live.myResult?.points ?? 0}`, tone: 'good' }
+      return { text: `Osvojio si rundu! +${live.myResult?.points ?? 0}`, tone: 'good' }
     }
-    if (live.end.winnerId !== null) return { text: `${opponentName} je bio brži`, tone: 'bad' }
+    if (live.end.winnerId !== null) return { text: `${opponentName} osvaja rundu`, tone: 'bad' }
     if (live.end.reason === 'timeout') return { text: 'Vrijeme je isteklo', tone: 'neutral' }
     return { text: 'Niko nije našao grešku', tone: 'neutral' }
   }
 
-  if (live.myResult && !live.myResult.correct)
-    return { text: `Pogrešno (${live.myResult.points}). Čekamo ${opponentName}…`, tone: 'bad' }
-  if (live.myAction?.kind === 'dont_know') {
-    return {
-      text: live.opponentAction === null ? `Čekamo ${opponentName}…` : 'Ni protivnik ne zna',
-      tone: 'neutral',
-    }
-  }
-  if (live.opponentAction === 'wrong') return { text: `${opponentName} je pogriješio`, tone: 'neutral' }
-  if (live.opponentAction === 'dont_know') return { text: `${opponentName} ne zna`, tone: 'neutral' }
+  if (live.myAction) return { text: `Odgovor je zaključan. Čekamo ${opponentName}…`, tone: 'neutral' }
   return null
 }

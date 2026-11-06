@@ -57,7 +57,7 @@ class AuthService(IAuthService):
         return self._authentication_response(user)
 
     def login(self, data: LoginRequestSchema) -> AuthenticationResponseSchema:
-        user = self._auth_repository.get_user_by_email(data.email.lower())
+        user = self._auth_repository.get_user_by_identifier(data.identifier.strip().lower())
         if user is None or not verify_password(data.password, user.password_hash):
             raise InvalidCredentialsException
         return self._authentication_response(user)
@@ -72,6 +72,10 @@ class AuthService(IAuthService):
             email=user.email,
             username=user.username,
             display_name=user.display_name,
+            avatar_color=user.avatar_color,
+            daily_goal=user.daily_goal,
+            sound_enabled=user.sound_enabled,
+            animations_enabled=user.animations_enabled,
             created_at=user.created_at,
         )
 
